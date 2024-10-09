@@ -1,0 +1,263 @@
+---
+# -------------- Información del documento. Inicio. ---------------- #
+title: Limpieza y Transformación de Datos con R
+date: "`r format(Sys.time(), format='%Y-%m-%d %H:%M:%S %z')`" # no se muestra en 
+author:
+    - name: Josué Romero J.
+      affiliation: 1
+affiliation:
+    - key: 1
+      name:
+        - Corporación Universitaria Minuto de Dios
+        - Bogatá D.C, COA Engativa, CLL 80
+    - key: 2
+      name:
+        - josue.romero@uniminuto.edu.co'
+        - 'Minería de Datos | NRC. 70348 | Narly Sanchez'
+    - key: 3
+      name:
+        - '08 de octubre de 2024'
+
+abstract: |
+  Demostramos el uso de una plantilla RMarkdown para el estilo IEEEtran.
+  Por ahora es solo estilo de conferencia, pero eventualmente ampliaremos (quizás).
+  
+# Esto se colocará en \bibliography{}
+bibliography:  'IEEEabrv,./library'
+  
+# ----------- Configuración de RMarkdown ---------
+output:
+  pdf_document:
+    template: "lib/ieee-pandoc-template.tex"
+    includes:
+      in_header:
+      - ./preamble.tex
+    keep_tex: yes # mantener el archivo tex intermedio
+    fig_caption: yes # mostrar leyendas de figuras
+    pandoc_args: # Agregar complementos
+    - --filter
+    - pandoc-crossref
+    - --natbib
+
+# --------- Configuración de la plantilla. Generalmente se puede dejar como está ---------
+classoption: conference # por ejemplo draftcls conference
+link-citations: yes # las citas tienen enlaces a la bibliografía
+reference-section-title: Referencias # título usado para la bibliografía
+papersize: a4paper
+natbib: yes
+documentclass: IEEEtran
+
+# ----------- Configuración de pandoc-crossref ---------
+eqnPrefix:
+    - ''
+    - ''
+figPrefix:
+  - "figura"
+  - "figuras"
+tblPrefix:
+  - "tabla"
+  - "tablas"
+secPrefix:
+  - "sección"
+  - "secciones"
+autoSectionLabels: true # anteponer sec: a los títulos de sección
+
+# -------------- Información del documento. Finr. ---------------- #
+---
+
+```{r setup, include=F}
+library(pander)
+library(knitr)
+# donde estarán las figuras
+opts_chunk$set(fig.path='figure/')
+# opciones del bloque de código: ordenado; ajustar a 40 caracteres
+opts_knit$set(tidy=T, tidy.opts=list(width.cutoff=40))
+
+# Algunas funciones útiles para generar latex cuando necesitas más control.
+# Opcional.
+ 
+# Útil para etiquetas de latex
+library(xtable)
+options(xtable.caption.placement='top',
+        xtable.table.placement='!t',
+        xtable.include.rownames=F,
+        xtable.comment=F)
+
+#' Salida de código LaTeX para un entorno de figura con leyenda y etiqueta y colocación
+#'
+#' La conversión de RMD a MD elimina `fig.pos` y etiquetas cuando ejecutas knitr, así que
+#' necesito generar LaTeX explícitamente.
+#'
+#' Usa Hmisc o xtab si deseas tablas.
+#'
+#' Si quieres hacer subfiguras (usando subfloat), proporciona múltiples nombres de archivo;
+#'  el primer elemento de la leyenda es la general y el resto son individuales.
+#' @family pandoc helpers
+#' @export
+latex.figure <- function (fname, caption, label, placement='!t', floating=F, width='\\columnwidth', subfloat=length(fname) > 1, linebreaks.after=NULL) {
+    if (subfloat && length(caption) == length(fname))
+        caption <- c('', caption)
+    else if (length(caption) > 1 && length(caption) != length(fname) && length(caption) != length(fname) + 1)
+        stop("La longitud de los nombres de archivo no coincide con la longitud de las leyendas (+1 si es subfloat)")
+    cat(sprintf('\\begin{figure%s}[%s]%%\n\\centering%%\n',
+                ifelse(floating, '*', ''), placement))
+    figs <- sprintf('\\includegraphics[width=%s]{%s}', width, fname)
+    if (subfloat)
+        figs <- sprintf('\\subfloat[%s]{%s}', caption[2:(length(fname) + 1)], figs)
+    if (!is.null(linebreaks.after)) {
+        figs[linebreaks.after] <- paste0(figs[linebreaks.after], '\\\\')
+    }
+    figs <- paste0(figs, '%')
+    cat(figs, sep='\n')
+    cat(sprintf('\\caption{%s}%%\n\\label{%s}%%\n\\end{figure%s}\n',
+        caption[1], label, ifelse(floating, '*', '')))
+}
+```
+
+
+# Introducción
+
+Este archivo de demostración está destinado a servir como un "archivo de inicio" para artículos de conferencia IEEE producidos bajo \LaTeX\ usando IEEEtran.cls versión 1.8b y posteriores.
+Te deseo el mayor de los éxitos.
+
+\hfill mds
+
+\hfill 08 de octubre de 2024
+
+Usa `rmarkdown::render()` para crear este documento; esencialmente llama a `knit()` para ir de RMD a MD, y luego `pandoc` (con todas las configuraciones en el YAML) para ir de MD a PDF.
+
+Se podría intentar compilar a HTML, pero por supuesto ninguno de los estilos IEEE se aplicará. Y si se ha incluido algún \LaTeX\ crudo en el documento (como es típico en un artículo, ya que podrías necesitar el poder adicional de \LaTeX\ para proporcionar un diseño específico), esto no se compilará en HTML.
+
+# Ejemplos
+
+## Knitr
+
+Puedes usar knitr como de costumbre. La opción de bloque `echo=F` debería establecerse (a menos que desees mostrar el código R en el artículo). Además, dado que este es un diseño de dos columnas, probablemente se desbordará, así que necesitarás
+
+* ajustar el código tú mismo (por defecto knitr no ordena el código), o
+* habilitar el ajuste de código y especificar el ancho: `opts_knit$set(tidy=T, tidy.opts=list(width.cutoff=40))`.
+* NB: la opción de bloque `size` (por ejemplo `opts_chunk$set(size="small")`) solo funciona en Rnw, no en Rmd).
+
+El ancho es bastante pequeño. Para este documento, puedes ajustar aproximadamente 42 caracteres antes de que se desborde (ver el ejemplo en @sec:figuras).
+
+## Figuras
+
+Por supuesto, puedes generar gráficos usando R y se insertarán con knitr.
+Sin embargo, dado que knitr va de MD a RMD, se insertarán en formato markdown, no en formato TeX.
+He configurado knitr para colocar figuras en el directorio `figure/` (`opts_chunk$set(fig.path='figure/')`), así que ahí es donde estará el gráfico.
+
+```{r iris.plot, fig.cap="Longitudes de sépalos para varias especies de iris.\\label{fig:iris}"}
+plot(Sepal.Length ~ Species, iris)
+```
+
+Ver @fig:iris. (No estoy seguro por qué esto es "Fig. 1" en la leyenda... ¿es un asunto de knitr/rmarkdown/pandoc, o un asunto de IEEEtran?)
+
+En la práctica, probablemente querrás escribir tu código de figura en \LaTeX\ crudo para tener un mayor control.
+En el bloque de configuración de este Rmd hay una función `latex.figure` que es un ejemplo de salida de \LaTeX\ crudo para una figura. Ajusta como desees. (Seguramente hay una biblioteca como `xtable` para esto).
+
+```{r raw.iris.plot, results='asis'}
+latex.figure(
+  'figure/iris.plot-1.pdf',
+  caption='Otro gráfico de longitudes de sépalos
+           para las diversas especies de iris.',
+  label='fig:iris2')
+```
+
+El comando `latex.figure` también tiene soporte básico para subfiguras: simplemente proporciona múltiples rutas de las imágenes. Si hay tantas leyendas como figuras, se utiliza una para cada una.  
+Si hay una leyenda más que la cantidad de figuras, la primera se usa como la leyenda "principal" y el resto como leyendas de subfiguras. Si solo hay una leyenda, se utiliza para la figura y no se añaden subleyendas.  
+Consulta @fig:polinomios para ver el resultado.
+
+
+```{r example.subfig, results='asis'}
+# generar y guardar algunas imágenes
+n = 1:5
+figs = sprintf('figure/x%i.png', n)
+for (nn in n) {
+  png(filename=figs[nn], width=480, height=300)
+  plot(1:10, (1:10)^nn)
+  dev.off()
+}
+
+# mostrar como figura flotante con 3 subfiguras
+latex.figure(
+  figs,
+  caption=c("Polinomios",
+            sprintf("$x^%i$", n)),
+  label='fig:polynomials',
+  linebreaks.after=3,
+  width='.6\\columnwidth',
+  floating=T)
+```
+
+Nota que frecuentemente los artículos de IEEE con subfiguras no usan leyendas para las subfiguras, sino que en su lugar las referencian/describen como (a), (b), etc., dentro de la leyenda principal.
+
+También nota que típicamente IEEE coloca los elementos flotantes solo en la parte superior, incluso cuando esto resulta en que un gran porcentaje de una columna esté ocupado por figuras flotantes.
+
+
+## Tables
+
+No debes usar la sintaxis de pandoc, ya que utiliza el paquete `longtable` (esto está codificado) y `longtable` no funciona bien con entradas de dos columnas. Usa algo como Hmisc o xtable para generar salida en \LaTeX\ y proporcionar mayor control (por ejemplo, @tbl:iris.xtable).
+
+```{r xtable, results='asis'}
+print(xtable(
+  iris[sample(nrow(iris), 6), ],
+  caption='Ejemplo del conjunto de datos iris',
+  label='tbl:iris.xtable',
+  align=c(rep('r', 5), 'l')))
+```
+
+Podrías desear que la tabla abarque varias columnas. Usa `table*` en lugar de `table` (@tbl:xtable.floating).  
+Nota que el argumento `floating.environment` pertenece a `print.xtable`, no a `xtable`.
+
+```{r xtable.floating, results='asis'}
+print(xtable(
+    head(mtcars),
+    caption='Ejemplo del conjunto de datos
+             de pruebas de automóviles de motor trend',
+    label='tbl:xtable.floating'),
+  floating.environment='table*')
+```
+
+Note que, para las tablas en el estilo IEEE, dado que los títulos de las tablas funcionan como encabezados, las leyendas suelen escribirse con mayúscula inicial en todas las palabras, excepto aquellas como: a, an, and, as, at, but, by, for, in, nor, of, on, or, the, to y up, que generalmente no se capitalizan, a menos que sean la primera o última palabra de la leyenda.
+El texto de las tablas usará por defecto `\footnotesize`, ya que el IEEE normalmente emplea esta fuente más pequeña para las tablas.
+
+Note que IEEE típicamente coloca los flotantes solo en la parte superior, incluso cuando esto resulta en que un gran porcentaje de una columna esté ocupada por flotantes.
+
+## Citando
+
+Ejemplos de citar un autor [@Besag1974] y dos autores [@Besag1974; @Besag1986].
+
+## Ecuaciones
+
+Son como cabría esperar. Puede utilizar la sintaxis de pandoc-crossref para generar etiquetas. Es decir,
+
+```
+$$
+e = m c^2
+$$ {#eq:einstein}
+```
+
+Que es igual a
+
+$$
+e = m c^2.
+$$ {#eq:einstein}
+
+Se puede usar `@eq:einstein` para referirse a la ecuación, por ejemplo, @eq:einstein. El único inconveniente es que la ecuación debe estar en su propio párrafo si desea numerarla, lo que significa que en el archivo tex y pdf resultante, la ecuación estará en su propia línea. (Si no desea numerar la ecuación, no tiene que estar en su propio párrafo y se renderizará en el párrafo como cabría esperar).
+
+Aún no he encontrado una buena solución para esto. Es un requisito de `pandoc-crossref`. Debe editar el archivo TeX y eliminar las líneas en blanco adicionales (donde sea apropiado) antes de compilar. Agrego un comentario `% FIXME ALIGNMENT` a estas ecuaciones para hacerlas más fáciles de encontrar.
+
+# Conclusión
+
+Espero que se le haya dado un breve recorrido por las capacidades de esta configuración y que ahora proceda a escribir artículos al estilo IEEEtran utilizando RMarkdown con (relativa) facilidad.
+
+# Agradecimientos {-}
+
+Esta plantilla no sería posible sin los 
+[archivos IEEEtran de Michael Shell](https://www.ctan.org/tex-archive/macros/latex/contrib/IEEEtran/?lang=en),
+[pandoc](http://pandoc.org/),
+[pandoc-crossref](https://github.com/lierdakil/pandoc-crossref),
+[knitr](http://yihui.name/knitr/),
+[rmarkdown](http://rmarkdown.rstudio.com/),
+y una exhaustiva búsqueda en [StackOverflow](http://stackoverflow.com/).
+Merece reconocimiento también [Rstudio](https://www.rstudio.com/). No es necesario para esto, pero ciertamente facilita todo el proceso. Y a cualquiera que haya olvidado mencionar.
